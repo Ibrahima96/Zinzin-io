@@ -49,4 +49,9 @@ RUN npm install && npm run build
 # Expose port 10000
 EXPOSE 10000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+# Copy entrypoint script and set permissions
+COPY --chown=$user:$user docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
