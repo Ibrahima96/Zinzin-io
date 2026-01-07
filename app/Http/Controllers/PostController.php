@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -33,7 +34,14 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate(['message' => 'required|string|max:225']);
+        $data = $request->validate([
+            'message' => 'required|string|max:225',
+            'photo' => 'nullable|image|max:3000'
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('posts', 'public');
+        }
 
         auth()->user()->posts()->create($data);
         return redirect('/')->with('success', 'Post créée avec succés 👌 ');
@@ -63,7 +71,18 @@ class PostController extends Controller
     {
         $this->authorize('update', $post);
 
-        $data = $request->validate(['message' => 'required|string|max:225']);
+        $data = $request->validate([
+            'message' => 'required|string|max:225',
+            'photo' => 'nullable|image|max:3000'
+        ]);
+
+        if ($request->hasFile('photo')) {
+            if ($post->photo) {
+                Storage::disk('public')->delete($post->photo);
+            }
+            $data['photo'] = $request->file('photo')->store('posts', 'public');
+        }
+
         $post->update($data);
         return redirect('/')->with('success', 'Post modifier avec succés 😎 ');
     }

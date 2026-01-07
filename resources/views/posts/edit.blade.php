@@ -219,18 +219,34 @@
                 <div
                     class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-tertiary to-secondary opacity-0 group-focus-within:opacity-100 transition-opacity">
                 </div>
-                <form action="{{ route('post.update', $post) }}" method="POST">
+                <form action="{{ route('post.update', $post) }}" method="POST" enctype="multipart/form-data">
                     @method('PUT')
                     @csrf
                     <label class="sr-only" for="message-input">Tapez votre message</label>
                     <textarea name="message"
                         class="w-full min-h-[180px] resize-none border-0 bg-transparent p-6 text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-0 text-xl leading-loose font-body"
-                        id="message-input" placeholder="Quelle pensée fleurit dans votre esprit aujourd'hui ?"
-                        >{{ old('messsage', $post->message) }}</textarea>
+                        id="message-input"
+                        placeholder="Quelle pensée fleurit dans votre esprit aujourd'hui ?">{{ old('messsage', $post->message) }}</textarea>
+
+                    <!-- Preview container -->
+                    <div id="image-preview-container" class="{{ $post->photo ? '' : 'hidden' }} px-6 pb-4">
+                        <div class="relative inline-block">
+                            <img id="image-preview" src="{{ $post->photo ? asset('storage/' . $post->photo) : '#' }}"
+                                alt="Aperçu" class="max-h-40 rounded-lg shadow-sm">
+                            <button type="button" id="remove-image"
+                                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                            </button>
+                        </div>
+                        <!-- Hidden input to track if image should be removed (if necessary, though for now we just handle replacement) -->
+                        <!-- In a more complex update, we might want a checkbox to delete the image entirely without replacing. -->
+                    </div>
+
                     <div
                         class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#3f4a4f] px-5 py-4">
                         <div class="flex gap-3">
-                            <button type="button"
+                            <input type="file" name="photo" id="photo-input" class="hidden" accept="image/*">
+                            <button type="button" onclick="document.getElementById('photo-input').click()"
                                 class="p-2.5 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-tertiary/20 dark:hover:bg-background-dark/50">
                                 <span class="material-symbols-outlined text-[24px]">photo_album</span>
                             </button>
@@ -246,6 +262,33 @@
                         </button>
                     </div>
                 </form>
+                <script>
+                    const photoInput = document.getElementById('photo-input');
+                    const previewContainer = document.getElementById('image-preview-container');
+                    const previewImage = document.getElementById('image-preview');
+                    const removeButton = document.getElementById('remove-image');
+
+                    photoInput.addEventListener('change', function () {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function (e) {
+                                previewImage.src = e.target.result;
+                                previewContainer.classList.remove('hidden');
+                            }
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
+                    removeButton.addEventListener('click', function () {
+                        photoInput.value = '';
+                        // If there was an existing image, this hides it visually
+                        // Note: This purely UI. To actually delete on server without replacing, we'd need a separate input.
+                        // For now, let's assume this just clears the NEW selection or hides the preview.
+                        previewContainer.classList.add('hidden');
+                        previewImage.src = '#';
+                    });
+                </script>
             </div>
             <div
                 class="pt-10 pb-5 border-b border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-between">

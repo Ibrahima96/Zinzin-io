@@ -49,8 +49,14 @@
         </div>
         <p class="mt-4 text-lg text-slate-700 dark:text-slate-300 leading-loose">
             <!-- message -->
-        <p>{{ $post->message }}</p>
+            {{ $post->message }}
         </p>
+        @if ($post->photo)
+            <div class="mt-4">
+                <img src="{{ asset('storage/' . $post->photo) }}" alt="Photo de {{ $post->user->name }}"
+                    class="rounded-2xl max-h-96 w-auto object-cover shadow-sm">
+            </div>
+        @endif
         <div class="mt-5 flex gap-7 border-t border-slate-100 dark:border-slate-700/50 pt-4">
             <button
                 class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-primary transition-colors group/btn">
