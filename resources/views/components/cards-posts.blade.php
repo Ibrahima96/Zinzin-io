@@ -5,7 +5,8 @@
         class="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-offset-2 ring-primary/30 dark:ring-offset-background-dark">
         <div
             class="h-full w-full bg-cover bg-center bg-slate-200 flex items-center justify-center text-primary font-display text-2xl">
-
+    <span>{{ strtoupper(substr($post->user->name, 0, 2))  }}</span>
+        
         </div>
     </div>
     <div class="flex flex-1 flex-col">
