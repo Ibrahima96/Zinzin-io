@@ -94,3 +94,179 @@ public function update(Request $request, Post $post)
     return redirect()->back()->with('success', 'Post mis à jour !');
 }
 ```
+
+## 5. Authentification avec Contrôleurs Invocables
+
+Une approche propre et modulaire utilisant des **Single Action Controllers**.
+
+### 1. Génération des Contrôleurs
+```bash
+php artisan make:controller Auth/Register --invokable
+php artisan make:controller Auth/Login --invokable
+php artisan make:controller Auth/Logout --invokable
+```
+
+### 2. Routes (routes/web.php)
+L'avantage des contrôleurs invocables est la simplicité de la route : on passe juste le nom de la classe.
+
+```php
+use App\Http\Controllers\Auth\Register;
+use App\Http\Controllers\Auth\Login;
+use App\Http\Controllers\Auth\Logout;
+use Illuminate\Support\Facades\Route;
+
+// Affichage des formulaires (si vous utilisez des méthodes séparées ou des vues directes)
+Route::view('/register', 'auth.register')->name('register');
+Route::view('/login', 'auth.login')->name('login');
+
+// Traitement (POST)
+Route::post('/register', Register::class);
+Route::post('/login', Login::class);
+Route::post('/logout', Logout::class)->name('logout');
+```
+
+### 3. Implémentation des Contrôleurs
+
+#### Register (app/Http/Controllers/Auth/Register.php)
+```php
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+
+class Register extends Controller
+{
+    public function __invoke(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|confirmed|min:8'
+        ]);
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+
+        Auth::login($user);
+
+        return redirect('/dashboard');
+    }
+}
+```
+
+#### Login (app/Http/Controllers/Auth/Login.php)
+```php
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class Login extends Controller
+{
+    public function __invoke(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            return redirect()->intended('dashboard');
+        }
+
+        return back()->withErrors([
+            'email' => 'Identifiants invalides.',
+        ])->onlyInput('email');
+    }
+}
+```
+
+#### Logout (app/Http/Controllers/Auth/Logout.php)
+```php
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class Logout extends Controller
+{
+    public function __invoke(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
+}
+```
+
+## 6. Commandes Invocables (Single Action Controllers)
+
+Idéal pour une action unique et spécifique.
+
+### Création
+```bash
+php artisan make:controller PublishPostController --invokable
+```
+
+### Code
+```php
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use Illuminate\Http\Request;
+
+class PublishPostController extends Controller
+{
+    public function __invoke(Post $post)
+    {
+        $post->update(['published_at' => now()]);
+        return redirect()->back();
+    }
+}
+```
+
+### Route
+```php
+use App\Http\Controllers\PublishPostController;
+
+Route::post('/posts/{post}/publish', PublishPostController::class);
+```
+
+## 7. Policies (Autorisation)
+
+Pour gérer qui a le droit de faire quoi (ex: modifier un post).
+
+### Création
+```bash
+php artisan make:policy PostPolicy --model=Post
+```
+
+### Code (Policy)
+```php
+// app/Policies/PostPolicy.php
+public function update(User $user, Post $post)
+{
+    // Seul l'auteur peut modifier
+    return $user->id === $post->user_id;
+}
+```
+
+### Utilisation (Controller)
+```php
+public function update(Request $request, Post $post)
+{
+    $this->authorize('update', $post);
+    // ... logique de mise à jour
+}
+```
