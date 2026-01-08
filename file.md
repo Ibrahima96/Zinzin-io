@@ -210,6 +210,25 @@ class Logout extends Controller
 }
 ```
 
+### Alternative : Laravel Breeze (Starter Kit)
+
+Si vous aviez utilisé **Laravel Breeze**, vous auriez obtenu le même résultat fonctionnel (Login/Register/Logout) automatiquement, mais avec une architecture différente.
+
+### Ce que Breeze fait pour vous :
+```bash
+composer require laravel/breeze --dev
+php artisan breeze:install
+```
+
+### Différences avec l'approche "Invocable" manuelle :
+1.  **Contrôleurs** : Breeze n'utilise pas de contrôleurs `__invoke`. Il regroupe les actions par "Ressource".
+    *   `Login` -> `AuthenticatedSessionController` (méthode `store`)
+    *   `Logout` -> `AuthenticatedSessionController` (méthode `destroy`)
+    *   `Register` -> `RegisteredUserController` (méthode `store`)
+2.  **Routes** : Les routes sont définies dans `routes/auth.php` (qui est inclus dans `web.php`).
+
+Si vous vouliez absolument des contrôleurs invocables **avec** Breeze, il faudrait refactoriser manuellement les contrôleurs générés par Breeze (ex: éclater `AuthenticatedSessionController` en `LoginController` et `LogoutController`).
+
 ## 6. Commandes Invocables (Single Action Controllers)
 
 Idéal pour une action unique et spécifique.
